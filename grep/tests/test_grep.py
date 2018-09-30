@@ -10,7 +10,7 @@ lst = []
 def save_to_list(line):
     lst.append(line)
 
-
+# вместо grep.output
 grep.output = save_to_list
 
 

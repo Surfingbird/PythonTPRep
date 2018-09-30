@@ -1,16 +1,43 @@
 
 import argparse
 import sys
+import re
 
 
 def output(line):
     print(line)
 
-
-def grep(lines, params):
+def count_grep(lines, regex):
+    count = 0
     for line in lines:
         line = line.rstrip()
-        if params.pattern in line:
+        if(re.search(regex, line)):
+            count += 1
+    return count
+
+
+#workspace
+def grep(lines, params):
+    regex_str = r""
+
+    if(params.invert):
+        regex_str = r"(?!" + params.pattern + r")"
+    else:
+        regex_str = params.pattern
+
+    if(params.ignore_case):
+        regex = re.compile(regex_str, re.IGNORECASE)
+    else:
+        regex = re.compile(regex_str)
+
+    if(params.count):
+        output(str(count_grep(lines, regex)))
+
+    for line in lines:
+        #устранение пробельных символов
+        line = line.rstrip()
+        # print(regex.match(line))
+        if(regex.match(line)):
             output(line)
 
 
