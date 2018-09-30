@@ -32,12 +32,14 @@ def grep(lines, params):
 
     if(params.count):
         output(str(count_grep(lines, regex)))
+        return 
+
 
     for line in lines:
         #устранение пробельных символов
         line = line.rstrip()
         # print(regex.match(line))
-        if(regex.match(line)):
+        if(regex.search(line)):
             output(line)
 
 
