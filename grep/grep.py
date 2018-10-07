@@ -2,39 +2,7 @@ import argparse
 import sys
 import re
 
-def get_context_Info(Nodes, i, before, after, list_of_matched_el):
-
-    string_numb_value = []
-
-    left_part = i - before
-    if left_part < 0:
-        left_part = 0
-
-    for j in range (left_part, i):
-        new_dict = []
-        new_dict.append(j)
-        new_dict.append(Nodes[j])
-        string_numb_value.append(tuple(new_dict))
-
-    list_of_matched_el.append(i)
-    m_el = []
-    m_el.append(i)
-    m_el.append(Nodes[i])
-    string_numb_value.append(tuple(m_el))
-
-    right_part = i + after + 1
-
-    if right_part > len(Nodes):
-        right_part = len(Nodes)
-
-    for j in range(i + 1, right_part):
-        new_dict = []
-        new_dict.append(j)
-        new_dict.append(Nodes[j])
-        string_numb_value.append(tuple(new_dict))
-
-    return string_numb_value
-
+from BoostedQueue import  BoostedQueue
 
 def output(line):
     print(line)
@@ -83,21 +51,23 @@ def grep(lines, params):
         after_str = params.context
 
     context_info = []
-
     matched_index = []
+    queue = BoostedQueue(before_str, after_str)
 
-    for i in range(len(lines)):
-        line = lines[i].rstrip()
+    counter = 1
 
-        if params.invert:
-            if regex.match(line):
-                NewContexInfo = get_context_Info(lines, i, before_str, after_str, matched_index)
-                context_info.extend(NewContexInfo)
+    for i in lines:
+        line = i.rstrip
+        queue.enqueue(line)
+        if not queue.current == None:
+            if params.invert:
+                if regex.match(line):
+                    new_context_info = queue.get_all_elem()
+                    context_info.extend(new_context_info)
 
-
-        elif regex.search(line):
-            NewContexInfo = get_context_Info(lines, i, before_str, after_str, matched_index)
-            context_info.extend(NewContexInfo)
+            elif regex.search(line):
+                new_context_info = queue.get_all_elem()
+                context_info.extend(new_context_info)
 
     context_info = sorted(set(context_info), key = lambda x : x[0])
     for line in context_info:
@@ -108,11 +78,7 @@ def grep(lines, params):
                 output(str(line[0] + 1) + "-" + str(line[1]))
         else:
             output(line[1])
-
-
-
-
-
+            
 def parse_args(args):
     parser = argparse.ArgumentParser(description='This is a simple grep on python')
     parser.add_argument(
