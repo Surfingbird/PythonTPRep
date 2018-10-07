@@ -2,38 +2,38 @@ import argparse
 import sys
 import re
 
-def GetContextInfo(Nodes, i, before, after, ListOfMatchedEl):
+def get_context_Info(Nodes, i, before, after, list_of_matched_el):
 
-    StringNumbValue = []
+    string_numb_value = []
 
-    LeftPart = i - before
-    if LeftPart < 0:
-        LeftPart = 0
+    left_part = i - before
+    if left_part < 0:
+        left_part = 0
 
-    for j in range (LeftPart, i):
+    for j in range (left_part, i):
         new_dict = []
         new_dict.append(j)
         new_dict.append(Nodes[j])
-        StringNumbValue.append(tuple(new_dict))
+        string_numb_value.append(tuple(new_dict))
 
-    ListOfMatchedEl.append(i)
+    list_of_matched_el.append(i)
     m_el = []
     m_el.append(i)
     m_el.append(Nodes[i])
-    StringNumbValue.append(tuple(m_el))
+    string_numb_value.append(tuple(m_el))
 
-    RightPart = i + after + 1
+    right_part = i + after + 1
 
-    if RightPart > len(Nodes):
-        RightPart = len(Nodes)
+    if right_part > len(Nodes):
+        right_part = len(Nodes)
 
-    for j in range(i + 1, RightPart):
+    for j in range(i + 1, right_part):
         new_dict = []
         new_dict.append(j)
         new_dict.append(Nodes[j])
-        StringNumbValue.append(tuple(new_dict))
+        string_numb_value.append(tuple(new_dict))
 
-    return StringNumbValue
+    return string_numb_value
 
 
 def output(line):
@@ -82,27 +82,27 @@ def grep(lines, params):
     elif params.context:
         after_str = params.context
 
-    ContextInfo = []
+    context_info = []
 
-    MatchedIndex = []
+    matched_index = []
 
     for i in range(len(lines)):
         line = lines[i].rstrip()
 
         if params.invert:
             if regex.match(line):
-                NewContexInfo = GetContextInfo(lines, i, before_str, after_str, MatchedIndex)
-                ContextInfo.extend(NewContexInfo)
+                NewContexInfo = get_context_Info(lines, i, before_str, after_str, matched_index)
+                context_info.extend(NewContexInfo)
 
 
         elif regex.search(line):
-            NewContexInfo = GetContextInfo(lines, i, before_str, after_str, MatchedIndex)
-            ContextInfo.extend(NewContexInfo)
+            NewContexInfo = get_context_Info(lines, i, before_str, after_str, matched_index)
+            context_info.extend(NewContexInfo)
 
-    ContextInfo = sorted(set(ContextInfo), key = lambda x : x[0])
-    for line in ContextInfo:
+    context_info = sorted(set(context_info), key = lambda x : x[0])
+    for line in context_info:
         if(params.line_number):
-            if line[0] in MatchedIndex:
+            if line[0] in matched_index:
                 output(str(line[0] + 1) + ":" + str(line[1]))
             else:
                 output(str(line[0] + 1) + "-" + str(line[1]))
