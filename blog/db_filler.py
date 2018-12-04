@@ -1,21 +1,21 @@
 from blog_api import BlogAPI
 from faker import Faker
-from contextlib import suppress
-from pymysql.err import IntegrityError as Duplicate
 from random import randint, sample
 
 f = Faker()
 b = BlogAPI()
 
-users = 0
-while users < 1000:
-    password = f.password()
-    user_name = f.user_name()
-    with suppress(Duplicate):
-        b.create_user(login=user_name, password=password)
-        b.auth(login=user_name, password=password)
-        users += 1
+passwords = [f.password() for _ in range(1000)]
+user_names = set()
+while len(user_names) < 1000:
+    user_names.add(f.user_name())
+users_info = [list(user) for user in zip(user_names, passwords)]
+
+b.create_users(users_info=users_info)
 b.commit()
+
+for user_name, password in zip(user_names, passwords):
+    b.auth(login=user_name, password=password)
 
 auth_blogs = randint(0, 100)
 author_ids = sample(b.auth_users, auth_blogs)
@@ -49,8 +49,8 @@ def add_answers(post_id, levels_left, parent_id=None):
     for _ in range(answers_amount):
         answerer_id = b.auth_users[randint(0, 999)]
         answer = f.sentence(nb_words=7)
-        b.add_comment(post_id=post_id, parent_id=parent_id, author_id=answerer_id, content=answer)
-        answers_amount += add_answers(parent_id=answerer_id, post_id=post_id, levels_left=levels_left - 1)
+        comment_id = b.add_comment(post_id=post_id, parent_id=parent_id, author_id=answerer_id, content=answer)
+        answers_amount += add_answers(parent_id=comment_id, post_id=post_id, levels_left=levels_left - 1)
     return answers_amount
 
 
