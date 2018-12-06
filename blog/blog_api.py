@@ -22,21 +22,18 @@ class BlogAPI:
         self.cursor = self.conn.cursor()
         self.auth_users = []
 
-    def create_users(self, users_info):
+    def create_user(self, login, password):
         """
         Creates users. Has to be committed after creation.
         """
-        users_info_hashed = []
-        for user_info in users_info:
-            if not all(user_info):
-                raise ValueError('Login or password is blank')
-            user_info[1] = md5(user_info[1].encode()).hexdigest()
-            users_info_hashed.append(user_info)
-        query = """
+        if not (login and password):
+            raise ValueError('Blank user or password')
+        hashed_pwd = md5(password.encode()).hexdigest()
+
+        self.cursor.execute(f"""
               INSERT INTO Users (Login, Password)
-              VALUES (%s, %s);
-              """
-        self.cursor.executemany(query, users_info_hashed)
+              VALUES ({login}, {hashed_pwd});
+              """)
 
     def auth(self, login, password):
         """
@@ -205,6 +202,14 @@ class BlogAPI:
                         """)
         return self.cursor.fetchall()
 
+    @staticmethod
+    def _get_elements_by_condition(arr, condition):
+        elements = []
+        for el in arr:
+            if condition(el):
+                elements.append(el)
+        return elements
+
     def get_comment_thread(self, comment_id):
         """
         Returns comment thread starting with specified comment_id.
@@ -213,22 +218,27 @@ class BlogAPI:
         if not comment_id:
             raise ValueError('Blank comment_id.')
 
+        self.cursor.execute(f"""SELECT CommentID, PostID, AuthorID, ParentID, Content
+                                FROM Comments
+                                WHERE PostID = (   
+                                    SELECT PostID 
+                                    FROM Comments
+                                    WHERE CommentID = {comment_id}
+                                )
+                            """)
+        comments_info = list(self.cursor.fetchall())
         stack = []
         queue = []
 
-        self.cursor.execute(f"""SELECT CommentID, PostID, AuthorID, ParentID, Content
-                                FROM Comments
-                                WHERE CommentID = {comment_id}""")
-        comment_info = self.cursor.fetchone()
-        queue.insert(0, comment_info)
+        starter_comment = self._get_elements_by_condition(arr=comments_info,
+                                                          condition=lambda el: el[0] == comment_id)[0]
+        queue.insert(0, starter_comment)
         while queue:
             comment_info = queue.pop()
             stack.append(comment_info)
             comment_id = comment_info[0]
-            self.cursor.execute(f"""SELECT CommentID, PostID, AuthorID, ParentID, Content
-                                FROM Comments
-                                WHERE ParentID = {comment_id}""")
-            comments = self.cursor.fetchall()
+            comments = self._get_elements_by_condition(arr=comments_info,
+                                                       condition=lambda el: el[3] == comment_id)
             for comment_info in comments:
                 queue.insert(0, comment_info)
 
